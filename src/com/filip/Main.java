@@ -16,6 +16,7 @@ public class Main{
 
         System.out.println("Hello, user!");
 
+	// define scanner as static variable on class level and access it from there, so you don't create multiple instances
         Scanner myObject = new Scanner(System.in);
 
         while(exit == 0){
@@ -31,13 +32,12 @@ public class Main{
             else{
                 switch (commands[0]) {
                     case "add":
-                        if(commands.length==2) {
-                            if (commands[1].equals("m") || commands[1].equals("w")){
+			// can be combined into one if statement
+                        if(commands.length==2 && (commands[1].equals("m") || commands[1].equals("w"))) {
                                 System.out.println("\nEmployee entry started.");
                                 addEmployee(commands[1]);
                                 System.out.println("\nEmployee entry ended.");
                                 break;
-                            }
                         }
                         System.out.println("You entered the wrong add command!");
                         break;
@@ -76,6 +76,8 @@ public class Main{
     }
 
     static void addEmployee(String command) {
+	// you can define scanner as static variable on class level and access it from there, so you don't create multiple instances
+	// also, you forgot to release the scanner at the end of method, that could be potential memory leak
         Scanner myObject = new Scanner(System.in);
         try{
             while(true){
@@ -128,17 +130,16 @@ public class Main{
 
     static void removeEmployee(String command) {
         try{
-            List<Employee> user = employeeList.stream()
-                    .filter(c -> c.getId() == Integer.parseInt(command))
-                    .collect(Collectors.toList());
-            if(user.size()==0){
-                System.out.println(String.format("\nEmployee with an ID:%s doesn't exist.", command));
-            }
-            employeeList.removeIf(s -> s.getId() == Integer.parseInt(command));
+	    // you don't need ¸list of employees, since every employee has unique id, and you will always get 1 employee for specified id if same exists
+	    // Collection::remove and Colleciton::removeIf methods return boolean that indicates wherer item was removed from list or not
+            Employee employee = employeeList.stream().filter(c -> c.getId() == Integer.parseInt(command)).findFirst().orElse(null);
 
-            System.out.println("\n" + user.get(0).getName() + " has been removed successfully.\n");
+            if(employeeList.remove(employee)){
+                System.out.println("\n" + employee.getName() + " has been removed successfully.\n");
+            }
         }
         catch(Exception e){
+	    System.out.printf("\nEmployee with an ID:%s doesn't exist.%n", command);
             System.out.println("Enter a correct number after remove.");
         }
 
@@ -146,14 +147,11 @@ public class Main{
     }
 
     static void searchEmployee(String command) {
-        List<Employee> user = employeeList.stream()
+	// there is a shortcut stream method ifPresentOrElse() so you don't have to check with if if employee is present
+        employeeList.stream()
                 .filter(c -> c.getName().equals(command))
-                .collect(Collectors.toList());
-        if(user.size()==0){
-            System.out.println(command + " doesn't exist, please add employee first.\n");
-        }
-        else{
-            System.out.println("\n" + command + " worked " + user.get(0).getWorkingHours() + " hours this week.\n" );
-        }
+                .findFirst()
+            .ifPresentOrElse(emp -> System.out.println("\n" + command + " worked " + emp.getWorkingHours() + " hours this week.\n"),
+                () -> System.out.println(command + " doesn't exist, please add employee first.\n"));
     }
 }
